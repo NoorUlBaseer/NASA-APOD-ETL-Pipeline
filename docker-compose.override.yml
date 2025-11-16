@@ -1,0 +1,6 @@
+services:
+  scheduler:
+    volumes:
+      - ./data:/usr/local/airflow/data
+      - ./.git:/usr/local/airflow/.git
+      - ./.dvc/cache:/usr/local/airflow/.dvc/cache
