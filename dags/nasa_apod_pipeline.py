@@ -3,6 +3,8 @@ import requests
 import pandas as pd
 from pathlib import Path
 from sqlalchemy import create_engine
+from io import StringIO
+import subprocess
 from airflow.models import Variable
 
 from airflow.decorators import dag, task
@@ -98,36 +100,68 @@ def nasa_apod_etl():
         """
     )
 
-    task_commit_git_metadata = BashOperator( # Task to commit the DVC metadata file to Git
-        task_id="task_commit_git_metadata",
-        doc="Commit the updated DVC metadata file to Git",
-        cwd="/usr/local/airflow", # Set working directory to Airflow home
-        # Commands to add and commit the .dvc file to Git
-        bash_command=f"""
-        echo "Committing DVC metadata file to Git..."
+    @task
+    def task_push_git_metadata(csv_file_path_str: str) -> str: # Task to commit DVC metadata to Git and push
+        # Retrieve GitHub Personal Access Token from Airflow Variables
+        try:
+            gh_pat = Variable.get("GH_PAT")
+        except KeyError:
+            raise Exception("GH_PAT Variable not found in Airflow. Please add it.")
+            
+        # GitHub repository details
+        github_username = "NoorUlBaseer"
+        repo_name = "NASA-APOD-ETL-Pipeline"
+        remote_url = f"https://{gh_pat}@github.com/{github_username}/{repo_name}.git" # Remote URL with PAT
         
-        # Ensure the Airflow directory is marked as a safe directory for Git
-        git config --global --add safe.directory /usr/local/airflow
+        csv_file_path = Path(csv_file_path_str) # Convert string path back to Path object
+        dvc_file_path = csv_file_path.with_suffix(csv_file_path.suffix + '.dvc') # Corresponding .dvc file path
         
-        # Configure Git user
-        git config --global user.email "baseersoomro2013@gmail.com"
-        git config --global user.name "Noor Ul Baseer"
+        project_root = "/usr/local/airflow" # Airflow home directory as project root
+
+        print("Running Git commands...")
         
-        # Add the .dvc file that was changed in the previous step
-        git add {CSV_FILE_PATH.relative_to('/usr/local/airflow')}.dvc
+        def run_cmd(cmd: list): # Helper function to run shell commands
+            print(f"Running command: {' '.join(cmd)}")
+            result = subprocess.run(
+                cmd,
+                capture_output=True,
+                text=True,
+                cwd=project_root
+            )
+            if result.returncode != 0:
+                print(f"Error Output: {result.stderr}")
+                raise Exception(f"Command failed: {result.stderr}")
+            print(f"Command Output: {result.stdout}")
+            return result.stdout
+
+        print("Configuring Git...")
+        run_cmd(["git", "config", "--global", "--add", "safe.directory", project_root]) # Mark directory as safe
+        run_cmd(["git", "config", "--global", "user.email", "baseersoomro2013@gmail.com"]) # Set Git user email
+        run_cmd(["git", "config", "--global", "user.name", "Noor Ul Baseer (Airflow)"]) # Set Git user name
         
-        # We add '[skip ci]' to prevent CI/CD loops if this repo is on GitHub
-        git commit -m "Update NASA APOD data via Airflow [skip ci]"
+        print("Adding and committing DVC file...")
+        run_cmd(["git", "add", str(dvc_file_path.relative_to(project_root))]) # Stage the .dvc file for commit
         
-        echo "Git commit complete."
-        """
-    )
+        status_result = run_cmd(["git", "status", "--porcelain"]) # Check Git status
+        if not status_result:
+            print("No changes to commit. Exiting clean.")
+            return "No new data; no commit pushed."
+
+        run_cmd(["git", "commit", "-m", "feat(data): Update NASA APOD data via Airflow [skip ci]"]) # Commit the changes
+        
+        print("Pushing to GitHub...")
+        run_cmd(["git", "remote", "set-url", "origin", remote_url]) # Set remote URL with PAT
+        run_cmd(["git", "push", "origin", "master"]) # Push changes to GitHub (use "main" if that is your branch)
+
+        return "Successfully pushed DVC metadata to GitHub."
 
     data_json = task_extract_and_transform() #Call the first task and store its output
 
     load_task = task_load_to_postgres_and_csv(data_json) # Call the second task with the output of the first task
 
-    load_task >> task_version_with_dvc >> task_commit_git_metadata # Define task dependencies
+    push_task = task_push_git_metadata(str(CSV_FILE_PATH)) # Call the third task with the CSV file path
+
+    load_task >> task_version_with_dvc >> push_task # Define task dependencies
 
 # Instantiate the DAG
 nasa_apod_etl()
