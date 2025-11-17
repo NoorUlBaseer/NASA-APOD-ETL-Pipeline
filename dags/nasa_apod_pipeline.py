@@ -139,6 +139,9 @@ def nasa_apod_etl():
         run_cmd(["git", "config", "--global", "user.email", "baseersoomro2013@gmail.com"]) # Set Git user email
         run_cmd(["git", "config", "--global", "user.name", "Noor Ul Baseer (Airflow)"]) # Set Git user name
 
+        print("Setting Git pull strategy to rebase...")
+        run_cmd(["git", "config", "--global", "pull.rebase", "true"]) # Set pull strategy to rebase
+
         print("Setting remote URL and pulling latest changes...")
         run_cmd(["git", "remote", "set-url", "origin", remote_url]) # Set remote URL with PAT
         run_cmd(["git", "pull", "origin", "master"]) # Pull latest changes from GitHub
