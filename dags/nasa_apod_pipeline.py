@@ -138,6 +138,10 @@ def nasa_apod_etl():
         run_cmd(["git", "config", "--global", "--add", "safe.directory", project_root]) # Mark directory as safe
         run_cmd(["git", "config", "--global", "user.email", "baseersoomro2013@gmail.com"]) # Set Git user email
         run_cmd(["git", "config", "--global", "user.name", "Noor Ul Baseer (Airflow)"]) # Set Git user name
+
+        print("Setting remote URL and pulling latest changes...")
+        run_cmd(["git", "remote", "set-url", "origin", remote_url]) # Set remote URL with PAT
+        run_cmd(["git", "pull", "origin", "master"]) # Pull latest changes from GitHub
         
         print("Adding and committing DVC file...")
         run_cmd(["git", "add", str(dvc_file_path.relative_to(project_root))]) # Stage the .dvc file for commit
