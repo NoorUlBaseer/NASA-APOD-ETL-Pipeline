@@ -146,7 +146,7 @@ def nasa_apod_etl():
         run_cmd(["git", "add", str(dvc_file_path.relative_to(project_root))]) # Stage the .dvc file for commit
 
         print("Checking for changes...")
-        status_result = run_cmd(["git", "status", "--porcelain"]) # Check Git status
+        status_result = run_cmd(["git", "status", "--porcelain", str(dvc_file_path.relative_to(project_root))]) # Check Git status
         # If there are no changes, exit early
         if not status_result:
             print("No changes to commit. Exiting clean.")
