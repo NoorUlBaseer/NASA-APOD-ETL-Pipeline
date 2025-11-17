@@ -151,7 +151,7 @@ def nasa_apod_etl():
         
         print("Pushing to GitHub...")
         run_cmd(["git", "remote", "set-url", "origin", remote_url]) # Set remote URL with PAT
-        run_cmd(["git", "push", "origin", "master"]) # Push changes to GitHub (use "main" if that is your branch)
+        run_cmd(["git", "push", "origin", "HEAD:master"]) # Push changes to GitHub
 
         return "Successfully pushed DVC metadata to GitHub."
 
