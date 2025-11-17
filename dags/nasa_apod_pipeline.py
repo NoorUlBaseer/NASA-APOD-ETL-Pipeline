@@ -94,7 +94,7 @@ def nasa_apod_etl():
         echo "Committing data to DVC cache..."
         
         # This command saves the file's contents to the .dvc/cache
-        dvc commit {CSV_FILE_PATH.relative_to('/usr/local/airflow')}.dvc
+        dvc commit {CSV_FILE_PATH.relative_to('/usr/local/airflow')}
         
         echo "DVC versioning complete."
         """
