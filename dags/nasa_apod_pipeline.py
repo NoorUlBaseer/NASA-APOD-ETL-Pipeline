@@ -142,22 +142,24 @@ def nasa_apod_etl():
         print("Setting Git pull strategy to rebase...")
         run_cmd(["git", "config", "--global", "pull.rebase", "true"]) # Set pull strategy to rebase
 
+        print("Adding DVC file...")
+        run_cmd(["git", "add", str(dvc_file_path.relative_to(project_root))]) # Stage the .dvc file for commit
+
+        print("Checking for changes...")
+        status_result = run_cmd(["git", "status", "--porcelain"]) # Check Git status
+        # If there are no changes, exit early
+        if not status_result:
+            print("No changes to commit. Exiting clean.")
+            return "No new data; no commit pushed."
+        
+        print("Committing DVC file...")
+        run_cmd(["git", "commit", "-m", "feat(data): Update NASA APOD data via Airflow [skip ci]"]) # Commit the .dvc file
+
         print("Setting remote URL and pulling latest changes...")
         run_cmd(["git", "remote", "set-url", "origin", remote_url]) # Set remote URL with PAT
         run_cmd(["git", "pull", "origin", "master"]) # Pull latest changes from GitHub
         
-        print("Adding and committing DVC file...")
-        run_cmd(["git", "add", str(dvc_file_path.relative_to(project_root))]) # Stage the .dvc file for commit
-        
-        status_result = run_cmd(["git", "status", "--porcelain"]) # Check Git status
-        if not status_result:
-            print("No changes to commit. Exiting clean.")
-            return "No new data; no commit pushed."
-
-        run_cmd(["git", "commit", "-m", "feat(data): Update NASA APOD data via Airflow [skip ci]"]) # Commit the changes
-        
         print("Pushing to GitHub...")
-        run_cmd(["git", "remote", "set-url", "origin", remote_url]) # Set remote URL with PAT
         run_cmd(["git", "push", "origin", "HEAD:master"]) # Push changes to GitHub
 
         return "Successfully pushed DVC metadata to GitHub."
