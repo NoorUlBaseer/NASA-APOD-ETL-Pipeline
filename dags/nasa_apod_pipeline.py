@@ -63,7 +63,14 @@ def nasa_apod_etl():
 
         print(f"Saving Data to Local CSV at {CSV_FILE_PATH}...")
         CSV_FILE_PATH.parent.mkdir(parents=True, exist_ok=True) # Ensure the directory exists
-        df.to_csv(CSV_FILE_PATH, index=False) # Save DataFrame to CSV
+        file_exists = CSV_FILE_PATH.is_file() # Check if the CSV file already exists
+
+        df.to_csv( # Save DataFrame to CSV
+            CSV_FILE_PATH, 
+            mode='a', # Append mode
+            index=False, # Do not write row indices
+            header=not file_exists # Write header only if file does not exist
+        )
         print("Successfully saved to CSV.")
 
         print(f"Loading Data into Postgres Table '{POSTGRES_TABLE}'...")
@@ -75,7 +82,7 @@ def nasa_apod_etl():
             name=POSTGRES_TABLE,
             con=engine,
             if_exists="append", # Append to existing table
-            index=False,
+            index=False, # Do not write DataFrame index as a column
             chunksize=500,
         )
         print("Successfully Loaded Data to Postgres.")
