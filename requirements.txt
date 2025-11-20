@@ -4,5 +4,3 @@ requests
 psycopg2-binary
 sqlalchemy
 dvc[gdrive]
-pyopenssl>=24.0.0
-cryptography==42.0.5
