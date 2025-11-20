@@ -1,5 +1,5 @@
 outs:
-- md5: d860074c50e35f2017a3aea7b358b426
-  size: 1800
+- md5: fce95ebdce697e7d53c3ef4cd5e6ea8d
+  size: 930
   hash: md5
   path: apod_data.csv
