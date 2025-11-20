@@ -9,3 +9,5 @@ airflow-webserver.pid
 webserver_config.py
 airflow.cfg
 airflow.db
+client_secrets.json
+gdrive-user-credentials.json
