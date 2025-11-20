@@ -91,6 +91,7 @@ def nasa_apod_etl():
         task_id="task_version_with_dvc",
         doc="Run DVC to version the new CSV file",
         cwd="/usr/local/airflow", # Set working directory to Airflow home
+        env={ "GDRIVE_CREDENTIALS_DATA": Variable.get("GDRIVE_JSON") }, # Set environment variable for DVC Google Drive credentials
         # Commands to add the CSV file to DVC and commit it to the DVC cache
         bash_command=f"""
         echo "Running dvc add for {CSV_FILE_PATH.relative_to('/usr/local/airflow')}"
@@ -102,6 +103,9 @@ def nasa_apod_etl():
         
         # This command saves the file's contents to the .dvc/cache
         dvc commit {CSV_FILE_PATH.relative_to('/usr/local/airflow')}
+
+        echo "Push Data to Google Drive"
+        dvc push
         
         echo "DVC versioning complete."
         """

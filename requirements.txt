@@ -2,5 +2,5 @@ apache-airflow-providers-postgres
 pandas
 requests
 psycopg2-binary
-dvc
+dvc[gdrive]
 sqlalchemy
