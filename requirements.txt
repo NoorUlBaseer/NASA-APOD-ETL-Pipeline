@@ -2,5 +2,7 @@ apache-airflow-providers-postgres
 pandas
 requests
 psycopg2-binary
-dvc[gdrive]
 sqlalchemy
+dvc[gdrive]
+pyopenssl>=24.0.0
+cryptography>=42.0.0
