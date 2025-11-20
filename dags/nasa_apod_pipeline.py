@@ -106,6 +106,9 @@ def nasa_apod_etl():
         # This command saves the file's contents to the .dvc/cache
         dvc commit {CSV_FILE_PATH.relative_to('/usr/local/airflow')}
 
+        echo "Configuring DVC for User Auth..."
+        dvc remote modify storage gdrive_use_service_account false
+
         echo "Push Data to Google Drive"
         dvc push
         
