@@ -62,17 +62,53 @@ def nasa_apod_etl():
     def task_load_to_postgres_and_csv(json_data: str): # Task to load data into Postgres and save as CSV
         df = pd.read_json(json_data, orient="split") # Read the data from the previous task
 
+        if not df.empty: 
+            date = df['date'].iloc[0]
+        else:
+            print("New data is empty. Skipping.")
+            return
+        
+        print(f"Processing data for date: {date}")
+
         print(f"Saving Data to Local CSV at {CSV_FILE_PATH}...")
         CSV_FILE_PATH.parent.mkdir(parents=True, exist_ok=True) # Ensure the directory exists
-        file_exists = CSV_FILE_PATH.is_file() # Check if the CSV file already exists
 
-        df.to_csv( # Save DataFrame to CSV
-            CSV_FILE_PATH, 
-            mode='a', # Append mode
-            index=False, # Do not write row indices
-            header=not file_exists # Write header only if file does not exist
-        )
-        print("Successfully saved to CSV.")
+        write_mode = 'w' # Default to overwrite if file doesn't exist
+        header = True # Write header by default
+        should_write = True # Flag to determine if we should write to CSV
+
+        if CSV_FILE_PATH.is_file(): # If the file exists, check for duplicates
+            try:
+                existing_df = pd.read_csv(CSV_FILE_PATH) # Read existing CSV
+                
+                if not existing_df.empty: # Check if existing CSV is not empty
+                    last_date = existing_df['date'].iloc[-1] # Get the date of the last entry
+                    print(f"Last entry in CSV is from: {last_date}")
+
+                    # Compare dates to avoid duplicates
+                    if str(last_date) == str(date): # If dates match, skip writing
+                        print("Date matches last entry. Skipping CSV append to avoid duplicates.")
+                        should_write = False # Do not write to CSV
+                    else: # If dates do not match, append new data
+                        print("Dates do not match. Appending new data.")
+                        write_mode = 'a' # Append mode
+                        header = False # Do not write header when appending
+                else: # File exists but is empty
+                    write_mode = 'w' # Overwrite mode
+                    header = True # Write header when overwriting
+            except Exception as e: # Handle any read errors
+                print(f"Error reading existing CSV: {e}. Overwriting file.")
+                write_mode = 'w' # Overwrite mode
+                header = True # Write header when overwriting
+
+        if should_write: # Only write if flag is set
+            df.to_csv(
+                CSV_FILE_PATH, 
+                mode=write_mode, 
+                index=False, 
+                header=header
+            )
+            print("Successfully saved to CSV.")
 
         print(f"Loading Data into Postgres Table '{POSTGRES_TABLE}'...")
         hook = PostgresHook(postgres_conn_id=POSTGRES_CONN_ID) # Create Postgres hook
