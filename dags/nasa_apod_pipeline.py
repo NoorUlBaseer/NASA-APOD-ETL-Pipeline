@@ -12,7 +12,8 @@ from airflow.providers.postgres.hooks.postgres import PostgresHook
 from airflow.operators.bash import BashOperator
 
 api_key = Variable.get("nasa_api_key") # Import NASA API key from Airflow Variables
-NASA_APOD_API = f"https://api.nasa.gov/planetary/apod?api_key={api_key}"
+data = "2025-11-17"
+NASA_APOD_API = f"https://api.nasa.gov/planetary/apod?api_key={api_key}&date={data}"
 POSTGRES_CONN_ID = "postgres_default" # Airflow Postgres connection ID
 POSTGRES_TABLE = "nasa_apod" # Target Postgres table name
 CSV_FILE_PATH = Path("/usr/local/airflow/data/apod_data.csv") # Local path to save CSV file
