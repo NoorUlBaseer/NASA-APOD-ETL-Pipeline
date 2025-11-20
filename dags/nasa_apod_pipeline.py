@@ -170,7 +170,7 @@ def nasa_apod_etl():
             return "No new data; no commit pushed."
         
         print("Committing DVC file...")
-        run_cmd(["git", "commit", "-m", "feat(data): Update NASA APOD data via Airflow [skip ci]"]) # Commit the .dvc file
+        run_cmd(["git", "commit", "-m", "Update NASA APOD data via Airflow"]) # Commit the .dvc file
 
         print("Setting remote URL and pulling latest changes...")
         run_cmd(["git", "remote", "set-url", "origin", remote_url]) # Set remote URL with PAT
