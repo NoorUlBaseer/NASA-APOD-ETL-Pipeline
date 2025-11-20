@@ -94,6 +94,8 @@ def nasa_apod_etl():
         env={ "GDRIVE_CREDENTIALS_DATA": Variable.get("GDRIVE_JSON") }, # Set environment variable for DVC Google Drive credentials
         # Commands to add the CSV file to DVC and commit it to the DVC cache
         bash_command=f"""
+        set -e # This command forces the task to fail if DVC fails
+
         echo "Running dvc add for {CSV_FILE_PATH.relative_to('/usr/local/airflow')}"
         
         # This command stages the CSV file, creating/updating the .dvc metadata file
