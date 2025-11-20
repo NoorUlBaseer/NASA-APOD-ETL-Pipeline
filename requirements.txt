@@ -3,4 +3,4 @@ pandas
 requests
 psycopg2-binary
 sqlalchemy
-dvc[gdrive]
+dvc[gdrive]==3.30.1
