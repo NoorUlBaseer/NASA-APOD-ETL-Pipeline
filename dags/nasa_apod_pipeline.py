@@ -83,8 +83,8 @@ def nasa_apod_etl():
         df = pd.read_json(json_data, orient="split") # Read the data from the previous task
 
         if not df.empty: # Ensure the new data is not empty
-            date = df['date'].iloc[0] # Get the date of the new data
-            date = date.split(" ")[0] # Extract date part if datetime
+            raw_date = df['date'].iloc[0] # Get the date of the new data
+            date = pd.to_datetime(raw_date).date() # Extract date part if datetime
         else:
             print("New data is empty. Skipping.")
             return
