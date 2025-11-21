@@ -227,7 +227,7 @@ def nasa_apod_etl():
 
         print("Setting remote URL and pulling latest changes...")
         run_cmd(["git", "remote", "set-url", "origin", remote_url]) # Set remote URL with PAT
-        run_cmd(["git", "pull", "origin", "master"]) # Pull latest changes from GitHub
+        run_cmd(["git", "pull", "--rebase", "-X", "theirs", "origin", "master"]) # Pull latest changes with rebase
         
         print("Pushing to GitHub...")
         run_cmd(["git", "push", "origin", "HEAD:master"]) # Push changes to GitHub
