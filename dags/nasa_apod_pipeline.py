@@ -1,3 +1,5 @@
+import os
+import subprocess
 import pendulum
 import requests
 import pandas as pd
@@ -60,6 +62,24 @@ def nasa_apod_etl():
 
     @task
     def task_load_to_postgres_and_csv(json_data: str): # Task to load data into Postgres and save as CSV
+        project_root = "/usr/local/airflow" # Airflow home directory as project root
+        
+        gdrive_creds = Variable.get("GDRIVE_JSON") # Get Google Drive credentials from Airflow Variables
+        
+        print("Configuring DVC for User Auth (inside Python)...")
+        # We use subprocess to run DVC commands before Pandas runs
+        env = os.environ.copy() # Copy existing environment variables
+        env["GDRIVE_CREDENTIALS_DATA"] = gdrive_creds # Set Google Drive credentials for DVC
+        
+        def run_dvc(cmd): # Helper function to run DVC commands
+            print(f"Running DVC command: {cmd}")
+            subprocess.run(cmd, shell=True, check=False, cwd=project_root, env=env)
+
+        run_dvc("dvc remote modify storage gdrive_use_service_account false") # Configure DVC for user authentication
+        
+        print("Pulling existing CSV history from Remote Storage")
+        run_dvc("dvc pull") # Pull existing data from remote storage
+
         df = pd.read_json(json_data, orient="split") # Read the data from the previous task
 
         if not df.empty: 
@@ -95,11 +115,9 @@ def nasa_apod_etl():
                         header = False # Do not write header when appending
                 else: # File exists but is empty
                     write_mode = 'w' # Overwrite mode
-                    header = True # Write header when overwriting
             except Exception as e: # Handle any read errors
                 print(f"Error reading existing CSV: {e}. Overwriting file.")
                 write_mode = 'w' # Overwrite mode
-                header = True # Write header when overwriting
 
         if should_write: # Only write if flag is set
             df.to_csv(
@@ -133,18 +151,16 @@ def nasa_apod_etl():
         bash_command=f"""
         set -e # This command forces the task to fail if DVC fails
 
+        echo "Configuring DVC for User Auth..."
+        dvc remote modify storage gdrive_use_service_account false
+
         echo "Running dvc add for {CSV_FILE_PATH.relative_to('/usr/local/airflow')}"
-        
         # This command stages the CSV file, creating/updating the .dvc metadata file
         dvc add {CSV_FILE_PATH.relative_to('/usr/local/airflow')}
 
         echo "Committing data to DVC cache..."
-        
         # This command saves the file's contents to the .dvc/cache
         dvc commit {CSV_FILE_PATH.relative_to('/usr/local/airflow')}
-
-        echo "Configuring DVC for User Auth..."
-        dvc remote modify storage gdrive_use_service_account false
 
         echo "Push Data to Google Drive"
         dvc push
