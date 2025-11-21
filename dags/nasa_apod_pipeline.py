@@ -14,7 +14,8 @@ from airflow.providers.postgres.hooks.postgres import PostgresHook
 from airflow.operators.bash import BashOperator
 
 api_key = Variable.get("nasa_api_key") # Import NASA API key from Airflow Variables
-NASA_APOD_API = f"https://api.nasa.gov/planetary/apod?api_key={api_key}" # NASA APOD API endpoint
+date = "2025-11-19"
+NASA_APOD_API = f"https://api.nasa.gov/planetary/apod?api_key={api_key}&date={date}" # NASA APOD API endpoint
 POSTGRES_CONN_ID = "postgres_default" # Airflow Postgres connection ID
 POSTGRES_TABLE = "nasa_apod" # Target Postgres table name
 CSV_FILE_PATH = Path("/usr/local/airflow/data/apod_data.csv") # Local path to save CSV file
@@ -90,7 +91,7 @@ def nasa_apod_etl():
         
         print(f"Processing data for date: {date}")
 
-        print(f"Saving Data to Local CSV at {CSV_FILE_PATH}...")
+        print(f"Checking for existing CSV at {CSV_FILE_PATH}")
         CSV_FILE_PATH.parent.mkdir(parents=True, exist_ok=True) # Ensure the directory exists
 
         write_mode = 'w' # Default to overwrite if file doesn't exist
